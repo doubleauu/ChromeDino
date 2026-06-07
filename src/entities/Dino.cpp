@@ -15,7 +15,7 @@ void Dino::reset() {
     currentRunFrame_ = 0;
 }
 
-bool Dino::update(const InputState &input) {
+bool Dino::update(const InputState &input) {  // 返回跳跃状态
     bool jumped = false;
 
     // 小恐龙跳跃：

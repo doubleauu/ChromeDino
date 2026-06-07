@@ -5,6 +5,7 @@
 class Assets;
 class Background;
 class Dino;
+class GameState;
 class Obstacle;
 class Projectile;
 class QPainter;
@@ -19,14 +20,6 @@ public:
         const Dino &dino,
         const Obstacle &obstacle,
         const Projectile &fireball,
-        bool welcome,
-        bool paused,
-        bool gameOver,
-        bool godMode,
-        int hurtProtectFrames,
-        int health,
-        int stamina,
-        int score,
-        int highScore
+        const GameState &state
     ) const;
 };

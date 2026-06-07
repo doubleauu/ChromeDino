@@ -3,6 +3,7 @@
 #include "../entities/Dino.h"
 #include "../entities/Obstacle.h"
 #include "../entities/Projectile.h"
+#include "../core/GameState.h"
 #include "../resources/Assets.h"
 #include "../scene/Background.h"
 
@@ -20,15 +21,7 @@ void GameRenderer::draw(
     const Dino &dino,
     const Obstacle &obstacle,
     const Projectile &fireball,
-    bool welcome,
-    bool paused,
-    bool gameOver,
-    bool godMode,
-    int hurtProtectFrames,
-    int health,
-    int stamina,
-    int score,
-    int highScore
+    const GameState &state
 ) const {   // 表示不会修改当前 GameRenderer 对象的成员变量。
     // 背景：
     painter.fillRect(screenRect,QColor(32,33,36));  // 填充整个矩形界面
@@ -94,9 +87,9 @@ void GameRenderer::draw(
     }
 
     if(currentPixmap && !currentPixmap->isNull()) {  // 如果图片加载成功了就绘制图片
-        if(godMode) {  // 无敌状态
+        if(state.godMode_) {  // 无敌状态
             painter.setOpacity(0.35);
-        }else if(hurtProtectFrames > 0 && (hurtProtectFrames/6)%2==0) {  // 受伤保护下，透明状态每 6 帧切换一次，实现闪烁
+        }else if(state.hurtProtectFrames_ > 0 && (state.hurtProtectFrames_/6)%2==0) {  // 受伤保护下，透明状态每 6 帧切换一次，实现闪烁
             painter.setOpacity(0.35);  // 设置画笔透明度
         }
         painter.drawPixmap(dino.drawRect(), *currentPixmap);
@@ -111,13 +104,13 @@ void GameRenderer::draw(
     // 状态绘制：
     painter.setPen(Qt::white);
 
-    if(welcome) {
+    if(state.welcome_) {
         painter.setFont(QFont(assets.fontFamily_, 32));
         painter.drawText(screenRect, Qt::AlignCenter, "Welcome to Run's Dino!\nPress Space to Start Running!");
-    }else if(gameOver) {
+    }else if(state.gameOver_) {
         painter.setFont(QFont(assets.fontFamily_, 32));
         painter.drawText(screenRect, Qt::AlignCenter, "Game Over\nPress R to Restart");
-    }else if(paused) {
+    }else if(state.paused_) {
         painter.setFont(QFont(assets.fontFamily_, 32));
         painter.drawText(screenRect, Qt::AlignCenter, "Paused\nPress ESC to Continue");
     }
@@ -125,7 +118,7 @@ void GameRenderer::draw(
 
     // 分数在欢迎界面不显示
     // 生命值在欢迎界面和失败界面不显示，后者已经在下方实现：生命值为 0，变成空指针不显示
-    if(welcome) {
+    if(state.welcome_) {
         return;
     }
 
@@ -133,11 +126,11 @@ void GameRenderer::draw(
     // 生命值绘制：如果游戏结束（生命值为零，就会变成空指针，也就不会绘制生命值）
     const QPixmap *heartPixmap = nullptr;
 
-    if(health >= 3) {
+    if(state.health_ >= 3) {
         heartPixmap = &assets.heart3Pixmap_;
-    }else if(health == 2) {
+    }else if(state.health_ == 2) {
         heartPixmap = &assets.heart2Pixmap_;
-    }else if(health == 1) {
+    }else if(state.health_ == 1) {
         heartPixmap = &assets.heart1Pixmap_;
     }
 
@@ -153,17 +146,17 @@ void GameRenderer::draw(
         QRect(1260,20,100,32),
         Qt::AlignRight | Qt::AlignVCenter,  // 靠右，且上下居中
         // 构造字符串对象：生成分数字符串 %1 是占位符，等待 arg 中的结果， 5 表示长度，10 表示进制，0 表示不足前面补 0
-        QString("%1").arg(score / 15, 5, 10, QLatin1Char('0'))  //减小显示的分数，防止增长过快
+        QString("%1").arg(state.score_ / 15, 5, 10, QLatin1Char('0'))  //减小显示的分数，防止增长过快
     );
     painter.drawText(
         QRect(1400, 20, 130, 32),
         Qt::AlignRight | Qt::AlignVCenter,
-        QString("HI %1").arg(highScore / 15, 5, 10, QLatin1Char('0'))
+        QString("HI %1").arg(state.highScore_ / 15, 5, 10, QLatin1Char('0'))
     );
 
 
     // 失败界面不绘制体力：
-    if(gameOver) {
+    if(state.gameOver_) {
         return;
     }
 
@@ -171,11 +164,11 @@ void GameRenderer::draw(
     // 体力值绘制：
     const QPixmap *staminaPixmap = nullptr;
 
-    if(stamina >= 3) {
+    if(state.stamina_ >= 3) {
         staminaPixmap = &assets.stamina3Pixmap_;
-    }else if(stamina == 2) {
+    }else if(state.stamina_ == 2) {
         staminaPixmap = &assets.stamina2Pixmap_;
-    }else if(stamina == 1) {
+    }else if(state.stamina_ == 1) {
         staminaPixmap = &assets.stamina1Pixmap_;
     }else {
         staminaPixmap = &assets.stamina0Pixmap_;

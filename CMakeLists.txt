@@ -17,6 +17,8 @@ qt_add_executable(MyDino
     src/GameWidget.h
     src/GameWidget.cpp
     src/core/GameRules.h
+    src/core/GameState.h
+    src/core/GameState.cpp
     src/input/InputState.h
     src/entities/Dino.h
     src/entities/Dino.cpp
