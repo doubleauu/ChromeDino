@@ -16,6 +16,20 @@ qt_add_executable(MyDino
     src/MainWindow.cpp
     src/GameWidget.h
     src/GameWidget.cpp
+    src/core/GameRules.h
+    src/input/InputState.h
+    src/entities/Dino.h
+    src/entities/Dino.cpp
+    src/entities/Obstacle.h
+    src/entities/Obstacle.cpp
+    src/entities/Projectile.h
+    src/entities/Projectile.cpp
+    src/scene/Background.h
+    src/scene/Background.cpp
+    src/resources/Assets.h
+    src/resources/Assets.cpp
+    src/rendering/GameRenderer.h
+    src/rendering/GameRenderer.cpp
 )
 
 #  把 Qt6 的 Widgets 模块库 链接到可执行目标 MyDino 上（窗口功能）
