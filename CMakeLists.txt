@@ -19,6 +19,8 @@ qt_add_executable(MyDino
     src/core/GameRules.h
     src/core/GameState.h
     src/core/GameState.cpp
+    src/core/SaveData.h
+    src/core/SaveData.cpp
     src/input/InputState.h
     src/entities/Dino.h
     src/entities/Dino.cpp
@@ -38,6 +40,10 @@ qt_add_executable(MyDino
 #  加上 Multimedia 库，支持音频
 #  private 表示权限，private只对当前目标生效
 target_link_libraries(MyDino PRIVATE Qt6::Widgets Qt6::Multimedia)
+
+target_compile_definitions(MyDino PRIVATE
+    PROJECT_RESOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/Resources"
+)
 
 # 链接图片，音频资源文件：每次构建后，把 MyDino/Resources 复制到 exe 旁边。
 add_custom_command(TARGET MyDino POST_BUILD

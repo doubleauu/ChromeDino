@@ -24,6 +24,7 @@ private:
     QTimer timer_; // 计时器，负责每隔一段时间提醒程序刷新
     void tick();  // 游戏每一帧要执行的函数，即每一帧的更新入口
     void resetGame();  // 重新开始游戏
+    void saveScoreOnGameOver();  // 游戏结束时保存本局分数
 
     Assets assets_;
     GameState state_;
@@ -33,5 +34,6 @@ private:
     Obstacle obstacle_;
     Projectile fireball_;
     GameRenderer renderer_;
+    bool scoreSavedForCurrentGame_ = false;  // 标记每一局游戏存档写入状态；
 
 };

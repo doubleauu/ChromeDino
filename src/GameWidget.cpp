@@ -1,6 +1,7 @@
 #include "GameWidget.h"
 
 #include "core/GameRules.h"
+#include "core/SaveData.h"
 
 #include <QCoreApplication>  // 应用程序本体的基础功能类
 #include <QKeyEvent>
@@ -19,7 +20,10 @@ GameWidget::GameWidget(QWidget *parent)
     connect(&timer_, &QTimer::timeout, this, &GameWidget::tick);  // 连接定时器 timer_ 与刷新函数 tick()
     timer_.start(1000/60);  //启动定时器，每隔约 16 毫秒触发一次 timeout 信号，约等于 60 帧率
 
-    assets_.load(QCoreApplication::applicationDirPath());
+    // Path 函数返回 .exe 文件所在路径，cmake构建会自动将资源文件复制到 exe 旁边
+    assets_.load(QCoreApplication::applicationDirPath());  // 传入路径
+    // 程序启动时先读取本地历史记录，让最高分可以跨运行保存。
+    state_.highScore_ = SaveData::loadHighScore();
 
     // 随机生成第一个障碍物：
     obstacle_.spawn(width());
@@ -42,6 +46,8 @@ void GameWidget::tick() {  // 作用域限定符写在返回类型后面
 
     if(state_.gameOver_) {
         state_.speed_ = 0;
+        // Game Over 状态会停留很多帧，所以这里需要通过标记保证只保存一次。
+        saveScoreOnGameOver();
         update();
         return;
     }
@@ -94,6 +100,10 @@ void GameWidget::tick() {  // 作用域限定符写在返回类型后面
     dino_.updateAnimation();
     obstacle_.updateAnimation();
 
+    // 如果这一帧刚好扣完血，gameOver_ 会在上面的碰撞处理中变成 true，
+    // 所以在本帧结束前尝试保存一次分数。
+    saveScoreOnGameOver();
+
     update(); // qt的函数，用来 “请求” 每一帧界面的刷新，之后会触发 paintEvent()
 }
 
@@ -123,12 +133,24 @@ void GameWidget::resetGame() {
     background_.reset();
 
     state_.reset();
+    // 新的一局开始后，允许下一次 Game Over 再写入一条新记录。
+    scoreSavedForCurrentGame_ = false;
 
     fireball_.reset();
 
     // 刷新随机障碍物
     obstacle_.spawn(width());
 
+}
+
+void GameWidget::saveScoreOnGameOver() {
+    // 只有“已经游戏结束”并且“本局还没保存过”时，才真正写入 JSON。
+    if(!state_.gameOver_ || scoreSavedForCurrentGame_) {
+        return;
+    }
+
+    SaveData::appendGameScore(state_.score_);
+    scoreSavedForCurrentGame_ = true;
 }
 
 // 键盘接受函数：

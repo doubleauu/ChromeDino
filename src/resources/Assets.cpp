@@ -7,7 +7,6 @@
 
 bool Assets::load(const QString &appDir) {
     // 加载小恐龙图片
-    // Path 函数返回 .exe 文件所在路径，cmake构建会自动将资源文件复制到 exe 旁边
     const QString imagePath = appDir + "/Resources/Textures/";
     run1Pixmap_.load(imagePath + "Run1.png");
     run2Pixmap_.load(imagePath + "Run2.png");
