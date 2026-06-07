@@ -22,6 +22,7 @@ Makefile
 *.dylib
 
 # Logs and temporary files
+tmp/
 *.log
 *.tmp
 *.bak
