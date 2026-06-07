@@ -295,6 +295,10 @@ void GameWidget::keyPressEvent(QKeyEvent *event) {
 
     // 跳跃按键
     if(event->key()==Qt::Key_Space || event->key()==Qt::Key_Up || event->key()==Qt::Key_W) {
+        if(stamina_ > 0 && dino_.tryDoubleJump()) {
+            --stamina_;
+            assets_.jumpSound_.play();
+        }
         input_.spacePressed = true;
         return;  // 其他按键不处理
     }

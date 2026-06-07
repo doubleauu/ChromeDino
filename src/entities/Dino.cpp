@@ -8,6 +8,7 @@ void Dino::reset() {
     velocityY_ = 0;
     inAir_ = false;
     sprint_ = false;
+    doubleJumpAvailable_ = false;
 
     // 重置小恐龙动画：
     motionRateCount_ = 0;
@@ -25,6 +26,7 @@ bool Dino::update(const InputState &input) {
             dinoRect_.moveTop(GameRules::GroundY);  // 将矩形顶部强制放回 groundY;
             velocityY_ = 0;
             inAir_ = false;
+            doubleJumpAvailable_ = false;  // 刷新二段跳状态
         }else {
             dinoRect_.translate(0,-delta); // 在原位置基础上移动恐龙矩形，x 方向不动，y 方向移动 velocityY_（速度）
             velocityY_ -= GameRules::Gravity;  // 速度随重力加速度变化，向上时逐渐变小，向下时逐步变大
@@ -47,10 +49,22 @@ bool Dino::update(const InputState &input) {
     if(input.spacePressed && !inAir_ && !sprint_) {
         velocityY_ = GameRules::JumpVelocity;  // 初始速度，后续随重力加速度变化
         inAir_ =  true;
+        doubleJumpAvailable_ = true;
         jumped = true;
     }
 
     return jumped;
+}
+
+bool Dino::tryDoubleJump() {
+    if(!inAir_ || !doubleJumpAvailable_) {
+        return false;
+    }
+
+    velocityY_ = GameRules::JumpVelocity;  // 如果可以跳跃，就给新的初始速度，模拟二次跳跃
+    doubleJumpAvailable_ = false;
+    sprint_ = false;
+    return true;
 }
 
 void Dino::updateAnimation() {

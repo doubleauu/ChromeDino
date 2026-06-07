@@ -49,7 +49,7 @@ private:
     int health_ = 3;  // 初始值为 3
     int hurtProtectFrames_ = 0;
 
-    // 体力值：
+    // 体力值：不止是恐龙属性，还用于火球，界面绘制，游戏状态等等，所以放到主界面类中
     int stamina_ = 3;
 
     // 添加当前分数和最高分显示
