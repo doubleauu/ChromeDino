@@ -133,7 +133,9 @@ void GameRenderer::draw(
 
     // 小恐龙
     const QPixmap *currentPixmap = nullptr;  // 指针指向的对象内容不能修改，但是可以更改指向内容
-    if(dino.isInAir()) {
+    if(state.gameOver_ && state.hurtProtectFrames_ <= 0) {
+        currentPixmap = &assets.failPixmap_;
+    }else if(dino.isInAir()) {
         currentPixmap = &assets.idlePixmap_;
     }else if(dino.isSprinting()) {  // 处理小恐龙下蹲时的动画帧数直接复用之前的判断变量：currentRunFrame_，保持一致
         if(dino.currentRunFrame() == 0) currentPixmap = &assets.sprint1Pixmap_;

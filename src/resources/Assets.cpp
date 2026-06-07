@@ -11,6 +11,7 @@ bool Assets::load(const QString &appDir) {
     run1Pixmap_.load(imagePath + "Run1.png");
     run2Pixmap_.load(imagePath + "Run2.png");
     idlePixmap_.load(imagePath + "Idle.png");
+    failPixmap_.load(imagePath + "Fail.png");
     sprint1Pixmap_.load(imagePath + "Sprint1.png");
     sprint2Pixmap_.load(imagePath + "Sprint2.png");
 

@@ -27,6 +27,9 @@ Makefile
 *.bak
 *.swp
 
+# Local game records
+Resources/scores.json
+
 # OS files
 .DS_Store
 Thumbs.db

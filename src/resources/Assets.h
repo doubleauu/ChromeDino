@@ -18,6 +18,7 @@ public:
     QPixmap run1Pixmap_;
     QPixmap run2Pixmap_;
     QPixmap idlePixmap_;  // 跳跃状态
+    QPixmap failPixmap_;
     // 下蹲状态图片：
     QPixmap sprint1Pixmap_;
     QPixmap sprint2Pixmap_;

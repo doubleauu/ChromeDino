@@ -47,10 +47,11 @@ void GameWidget::tick() {  // 作用域限定符写在返回类型后面
 
     if(state_.gameOver_) {
         state_.speed_ = 0;
+        state_.updateTimers();  // 游戏结束后小孔龙依旧需要闪烁，之后更换图片显示
         // Game Over 状态会停留很多帧，所以这里需要通过标记保证只保存一次。
         saveScoreOnGameOver();
         update();
-        return;
+        return;  // 只是退出了当前帧的判断，但是程序还是一直运行，保证了结束后小孔龙可以成功闪烁并转换成失败状态；
     }
 
     state_.updateTimers();
@@ -77,7 +78,7 @@ void GameWidget::tick() {  // 作用域限定符写在返回类型后面
     // 火球与障碍物碰撞检测：
     if(fireball_.active() && fireball_.collisionRect().intersects(obstacleCollisionBox)) {
         fireball_.deactivate();
-        obstacle_.spawn(width());
+        obstacle_.spawn(width());  // 重新出现
     }
 
 
