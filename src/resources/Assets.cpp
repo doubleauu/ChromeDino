@@ -7,11 +7,11 @@
 
 bool Assets::load(const QString &appDir) {
     // 加载小恐龙图片
-    // Path 函数返回 .exe 文件所在路径，cmake构建会自动将资源文件复制到 exe 旁边
     const QString imagePath = appDir + "/Resources/Textures/";
     run1Pixmap_.load(imagePath + "Run1.png");
     run2Pixmap_.load(imagePath + "Run2.png");
     idlePixmap_.load(imagePath + "Idle.png");
+    failPixmap_.load(imagePath + "Fail.png");
     sprint1Pixmap_.load(imagePath + "Sprint1.png");
     sprint2Pixmap_.load(imagePath + "Sprint2.png");
 
@@ -49,6 +49,12 @@ bool Assets::load(const QString &appDir) {
 
     // 能量球图片：
     energyballPixmap_.load(imagePath + "Energyball.png");
+
+    // 排行榜图片：
+    leaderboardPanelPixmap_.load(imagePath + "LeaderboardPanel.png");
+    leaderboardMedal1Pixmap_.load(imagePath + "LeaderboardMedal1.png");
+    leaderboardMedal2Pixmap_.load(imagePath + "LeaderboardMedal2.png");
+    leaderboardMedal3Pixmap_.load(imagePath + "LeaderboardMedal3.png");
 
     // 加载字体：
     const QString resourcePath = appDir + "/Resources/";

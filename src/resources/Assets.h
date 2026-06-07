@@ -18,6 +18,7 @@ public:
     QPixmap run1Pixmap_;
     QPixmap run2Pixmap_;
     QPixmap idlePixmap_;  // 跳跃状态
+    QPixmap failPixmap_;
     // 下蹲状态图片：
     QPixmap sprint1Pixmap_;
     QPixmap sprint2Pixmap_;
@@ -50,6 +51,12 @@ public:
 
     // 火球:
     QPixmap fireballPixmap_;
+
+    // 排行榜图片：
+    QPixmap leaderboardPanelPixmap_;
+    QPixmap leaderboardMedal1Pixmap_;
+    QPixmap leaderboardMedal2Pixmap_;
+    QPixmap leaderboardMedal3Pixmap_;
 
     // 保存字体名称，使用默认字体兜底
     QString fontFamily_ = QStringLiteral("Consolas");

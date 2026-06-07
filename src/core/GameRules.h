@@ -12,5 +12,5 @@ constexpr int FallVelocity = -1840;  // 空中下蹲快速下落
 constexpr int HurtProtectFrames = 60;  // 受伤后保护 60 帧，约 1 秒，防止一个障碍物重复扣血
 constexpr int GodModeFrames = 200;  // 最大无敌帧数
 constexpr int MaxHealth = 3;
-constexpr int MaxStamina = 3;
+constexpr int MaxStamina = 3;  // 体力
 }

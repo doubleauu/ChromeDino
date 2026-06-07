@@ -1,11 +1,11 @@
 #include "GameWidget.h"
 
 #include "core/GameRules.h"
+#include "core/SaveData.h"
 
 #include <QCoreApplication>  // 应用程序本体的基础功能类
 #include <QKeyEvent>
 #include <QPainter>
-#include <algorithm>
 
 // 构造函数实现：
 GameWidget::GameWidget(QWidget *parent)
@@ -20,7 +20,11 @@ GameWidget::GameWidget(QWidget *parent)
     connect(&timer_, &QTimer::timeout, this, &GameWidget::tick);  // 连接定时器 timer_ 与刷新函数 tick()
     timer_.start(1000/60);  //启动定时器，每隔约 16 毫秒触发一次 timeout 信号，约等于 60 帧率
 
-    assets_.load(QCoreApplication::applicationDirPath());
+    // Path 函数返回 .exe 文件所在路径，cmake构建会自动将资源文件复制到 exe 旁边
+    assets_.load(QCoreApplication::applicationDirPath());  // 传入路径
+    // 程序启动时先读取本地历史记录，让最高分可以跨运行保存。
+    state_.highScore_ = SaveData::loadHighScore();
+    topScores_ = SaveData::loadTopScores(3);
 
     // 随机生成第一个障碍物：
     obstacle_.spawn(width());
@@ -30,55 +34,36 @@ GameWidget::GameWidget(QWidget *parent)
 void GameWidget::tick() {  // 作用域限定符写在返回类型后面
 
     // 欢迎，暂停，失败状态下，只重绘画面，不更新游戏逻辑：
-    if(paused_) {
+    if(state_.welcome_) {
+        state_.speed_ = 0;
         update();
         return;
     }
 
-    if(welcome_) {
-        speed_ = 0;
+    if(state_.paused_) {
         update();
         return;
     }
 
-    if(gameOver_) {
-        speed_ = 0;
+    if(state_.gameOver_) {
+        state_.speed_ = 0;
+        state_.updateTimers();  // 游戏结束后小孔龙依旧需要闪烁，之后更换图片显示
+        // Game Over 状态会停留很多帧，所以这里需要通过标记保证只保存一次。
+        saveScoreOnGameOver();
         update();
-        return;
+        return;  // 只是退出了当前帧的判断，但是程序还是一直运行，保证了结束后小孔龙可以成功闪烁并转换成失败状态；
     }
 
-    // 受伤保护时间倒计时：
-    if(hurtProtectFrames_ > 0) {
-        --hurtProtectFrames_;
-    }
-
-    // 无敌时间倒计时
-    if(godModeFrames_ > 0) {
-        --godModeFrames_;
-        if(godModeFrames_ <= 0) {
-            godMode_ = false;
-        }
-    }
-
-    // 根据分数更新速度档位
-    if(score_ >= 6000) {
-        speed_ = 4;
-    }else if (score_ >= 3000) {
-        speed_ = 3;
-    }else {
-        speed_ = 2;
-    }
-
-    scrollSpeed_ = speed_ * 3;  // 背景滚动速度
-    obstacleSpeed_ = speed_ * 8;   // 障碍物移动速度
+    state_.updateTimers();
+    state_.updateSpeed();
 
     if(dino_.update(input_)) {
         assets_.jumpSound_.play();  // 播放跳跃音效
     }
 
-    background_.update(speed_);
+    background_.update(state_.speed_);
 
-    obstacle_.update(obstacleSpeed_);
+    obstacle_.update(state_.obstacleSpeed_);
     // 更换随机障碍物：
     if(obstacle_.isOffScreen()) {
         obstacle_.spawn(width());
@@ -93,48 +78,33 @@ void GameWidget::tick() {  // 作用域限定符写在返回类型后面
     // 火球与障碍物碰撞检测：
     if(fireball_.active() && fireball_.collisionRect().intersects(obstacleCollisionBox)) {
         fireball_.deactivate();
-        obstacle_.spawn(width());
+        obstacle_.spawn(width());  // 重新出现
     }
 
 
     // 碰撞检测时加上保护检测，血量扣光时游戏结束
     if(dinoCollisionBox.intersects(obstacleCollisionBox)) {
         if(obstacle_.type() == ObstacleType::Energy) {  // 如果是撞上能量球，就加体力，上限为 3
-            stamina_ = std::min(GameRules::MaxStamina, stamina_ + 1);
+            state_.recoverStamina();
             obstacle_.spawn(width());
-        }else if(!godMode_ && hurtProtectFrames_ <= 0) {  // 否则，如果不在无敌状态且不在受伤保护期间就扣血
-            --health_;
+        }else if(!state_.godMode_ && state_.hurtProtectFrames_ <= 0) {  // 否则，如果不在无敌状态且不在受伤保护期间就扣血
+            state_.takeDamage();
             assets_.hurtSound_.play();  // 受伤音效
-            hurtProtectFrames_ = GameRules::HurtProtectFrames;
-
-            if(health_ <= 0) {
-                gameOver_ = true;
-            }
         }
     }
 
 
 
-    // 更新分数，每一帧加一分，之后显示的时候再缩小，不然不好实现
-    if(!gameOver_) {  // 这里进行二次判断，是防止这一帧刚碰撞还继续加分
-        score_ += speed_ - 1;
-        if(dino_.isSprinting()) score_ += speed_ - 1;  // 冲刺状态加分
-        highScore_ = std::max(highScore_, score_);
-
-        // 分数阈值音效：
-        if(score_ >= 3000 && !score3000Played_) {
-            assets_.scoreSound_.play();
-            score3000Played_ = true;
-        }
-
-        if(score_ >= 6000 && !score6000Played_) {
-            assets_.scoreSound_.play();
-            score6000Played_ = true;
-        }
+    if(state_.addScore(dino_.isSprinting())) {
+        assets_.scoreSound_.play();
     }
 
     dino_.updateAnimation();
     obstacle_.updateAnimation();
+
+    // 如果这一帧刚好扣完血，gameOver_ 会在上面的碰撞处理中变成 true，
+    // 所以在本帧结束前尝试保存一次分数。
+    saveScoreOnGameOver();
 
     update(); // qt的函数，用来 “请求” 每一帧界面的刷新，之后会触发 paintEvent()
 }
@@ -151,15 +121,8 @@ void GameWidget::paintEvent(QPaintEvent *) {
         dino_,
         obstacle_,
         fireball_,
-        welcome_,
-        paused_,
-        gameOver_,
-        godMode_,
-        hurtProtectFrames_,
-        health_,
-        stamina_,
-        score_,
-        highScore_
+        state_,
+        topScores_
     );
 }
 
@@ -172,37 +135,26 @@ void GameWidget::resetGame() {
     //重置障碍物和背景位置：
     background_.reset();
 
-    // 重置游戏状态：
-    gameOver_ = false;
-    welcome_ = true;
-    paused_ = false;
-    score_ = 0;
-
-    // 重置血量：
-    health_ = GameRules::MaxHealth;
-    hurtProtectFrames_ = 0;
-
-    // 重置无敌状态：
-    godMode_ = false;
-    godModeFrames_ = 0;
-
-    // 重置体力：
-    stamina_ = GameRules::MaxStamina;
+    state_.reset();
+    // 新的一局开始后，允许下一次 Game Over 再写入一条新记录。
+    scoreSavedForCurrentGame_ = false;
 
     fireball_.reset();
-
-    // 重置速度：
-    speed_ = 2;
-    scrollSpeed_ = speed_ * 3;
-    obstacleSpeed_ = speed_ * 8;
 
     // 刷新随机障碍物
     obstacle_.spawn(width());
 
-    // 重置分数音效状态
-    score3000Played_ = false;
-    score6000Played_ = false;
+}
 
+void GameWidget::saveScoreOnGameOver() {
+    // 只有“已经游戏结束”并且“本局还没保存过”时，才真正写入 JSON。
+    if(!state_.gameOver_ || scoreSavedForCurrentGame_) {
+        return;
+    }
+
+    SaveData::appendGameScore(state_.score_);
+    topScores_ = SaveData::loadTopScores(3);
+    scoreSavedForCurrentGame_ = true;
 }
 
 // 键盘接受函数：
@@ -215,19 +167,19 @@ void GameWidget::keyPressEvent(QKeyEvent *event) {
     }
 
     // 重开按键：
-    if(event->key()==Qt::Key_R && gameOver_) {
+    if(event->key()==Qt::Key_R && state_.gameOver_) {
         resetGame();
-        welcome_ = false;  // 实现失败后重开直接开跑；
+        state_.welcome_ = false;  // 实现失败后重开直接开跑；
         return;
     }
 
     // 欢迎界面按跳跃键开始游戏，可放到跳跃逻辑中处理，也可单独处理
     // 此时不处理其他按键
-    if(welcome_) {
+    if(state_.welcome_) {
         if(event->key()==Qt::Key_Space || event->key()==Qt::Key_Up || event->key()==Qt::Key_W) {
             input_.spacePressed = true;
-            welcome_ = false;
-            speed_ = 2;
+            state_.welcome_ = false;
+            state_.speed_ = 2;
         }
         return;
     }
@@ -235,8 +187,8 @@ void GameWidget::keyPressEvent(QKeyEvent *event) {
 
     // Esc 暂停 / 继续：
     if(event->key()==Qt::Key_Escape) {
-        if(!gameOver_ && !welcome_) {
-            paused_ = !paused_;
+        if(!state_.gameOver_ && !state_.welcome_) {
+            state_.paused_ = !state_.paused_;
         }
 
         // 其实我感觉接受更好一点，否则下蹲期间上方是飞鸟，暂停直接变成站立就碰上了
@@ -252,22 +204,22 @@ void GameWidget::keyPressEvent(QKeyEvent *event) {
     }
 
     // 暂停后只接受 esc 按键
-    if(paused_) {
+    if(state_.paused_) {
         QWidget::keyPressEvent(event);  // 交给父类处理，其实就是丢掉不处理，写不写无所谓
         return;
     }
 
     // 游戏结束后不再处理按键
-    if(gameOver_) {
+    if(state_.gameOver_) {
         QWidget::keyPressEvent(event);
         return;
     }
 
 
     // 右键发射火球：(欢迎界面不处理）
-    if(!welcome_ && event->key()==Qt::Key_Right) {
-        if(stamina_ > 0 && !fireball_.active()) {  // 不能连续发射，因为只有一个火球矩形；
-            --stamina_;
+    if(!state_.welcome_ && event->key()==Qt::Key_Right) {
+        if(state_.hasStamina() && !fireball_.active()) {  // 不能连续发射，因为只有一个火球矩形；
+            state_.consumeStamina();
             assets_.shootSound_.play();
             fireball_.shoot(dino_.drawRect(), dino_.isSprinting(), dino_.isInAir());
         }
@@ -276,10 +228,8 @@ void GameWidget::keyPressEvent(QKeyEvent *event) {
 
     // 左键开启无敌：
     if(event->key() == Qt::Key_Left) {
-        if(stamina_ >= GameRules::MaxStamina && !godMode_) {
-            stamina_ = 0;
-            godMode_ = true;
-            godModeFrames_ = GameRules::GodModeFrames;
+        if(state_.canActivateGodMode()) {
+            state_.activateGodMode();
             assets_.godSound_.play();
         }
         return;  // 低于三格体力不处理
@@ -295,6 +245,10 @@ void GameWidget::keyPressEvent(QKeyEvent *event) {
 
     // 跳跃按键
     if(event->key()==Qt::Key_Space || event->key()==Qt::Key_Up || event->key()==Qt::Key_W) {
+        if(state_.hasStamina() && dino_.tryDoubleJump()) {
+            state_.consumeStamina();
+            assets_.jumpSound_.play();
+        }
         input_.spacePressed = true;
         return;  // 其他按键不处理
     }
