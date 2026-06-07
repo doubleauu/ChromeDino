@@ -8,6 +8,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QString>
+#include <QVector>
 
 #include <algorithm>
 
@@ -98,6 +99,33 @@ int SaveData::loadHighScore() {
     }
 
     return highScore;
+}
+
+QVector<int> SaveData::loadTopScores(int count) {
+    QVector<int> scores;
+    if(count <= 0) {
+        return scores;
+    }
+
+    const QJsonArray games = readSaveObject()["games"].toArray();
+    for(const QJsonValue &game : games) {
+        const QJsonObject gameObject = game.toObject();
+        scores.append(gameObject["rawScore"].toInt());
+    }
+
+    std::sort(scores.begin(), scores.end(), [](int left, int right) {
+        return left > right;
+    });
+
+    if(scores.size() > count) {
+        scores.resize(count);
+    }
+
+    for(int &score : scores) {
+        score /= ScoreScale;
+    }
+
+    return scores;
 }
 
 void SaveData::appendGameScore(int rawScore) {

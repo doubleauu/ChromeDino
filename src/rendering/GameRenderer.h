@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QRect>
+#include <QVector>
 
 class Assets;
 class Background;
@@ -20,6 +21,7 @@ public:
         const Dino &dino,
         const Obstacle &obstacle,
         const Projectile &fireball,
-        const GameState &state
+        const GameState &state,
+        const QVector<int> &topScores
     ) const;
 };

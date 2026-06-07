@@ -12,6 +12,63 @@
 #include <QPainter>
 #include <QPixmap>
 #include <QString>
+#include <QVector>
+
+namespace {
+
+QString scoreText(const QVector<int> &topScores, int index) {
+    if(index < topScores.size()) {
+        return QString("%1").arg(topScores[index], 5, 10, QLatin1Char('0'));
+    }
+    return QStringLiteral("-----");
+}
+
+void drawLeaderboard(QPainter &painter, const QRect &screenRect, const Assets &assets, const QVector<int> &topScores) {
+    // 排行榜面板位置和大小：
+    // x 使用窗口宽度居中；245 控制面板顶部 y 坐标；560/297 控制面板绘制宽高。
+    const QRect panelRect((screenRect.width() - 560) / 2, 245, 560, 297);
+
+    if(!assets.leaderboardPanelPixmap_.isNull()) {
+        painter.drawPixmap(panelRect, assets.leaderboardPanelPixmap_);
+    }else {
+        painter.setBrush(QColor(48, 49, 52, 220));
+        painter.setPen(QColor(180, 180, 180));
+        painter.drawRect(panelRect);
+    }
+
+    const QPixmap *medals[] = {
+        &assets.leaderboardMedal1Pixmap_,
+        &assets.leaderboardMedal2Pixmap_,
+        &assets.leaderboardMedal3Pixmap_
+    };
+
+    painter.setPen(Qt::white);
+    painter.setFont(QFont(assets.fontFamily_, 20));
+    for(int i = 0; i < 3; ++i) {
+        // 每一行排行榜的位置：
+        // 170 控制三条记录整体在面板内部的中心高度；52 控制每两行之间的垂直间距。
+        const int rowY = panelRect.top() + 170 + (i - 1) * 52;
+        // 奖牌位置和大小：
+        // center.x - 105 控制奖牌横向位置；rowY - 19 控制奖牌相对本行的上下位置；34/45 控制奖牌大小。
+        const QRect medalRect(panelRect.center().x() - 105, rowY - 19, 34, 45);
+
+        if(!medals[i]->isNull()) {
+            painter.drawPixmap(medalRect, *medals[i]);
+        }else {
+            painter.drawText(medalRect, Qt::AlignCenter, QString::number(i + 1));
+        }
+
+        painter.drawText(
+            // 分数位置：
+            // center.x - 50 控制分数横向位置；rowY - 12 控制分数上下位置；140/32 控制文字区域大小。
+            QRect(panelRect.center().x() - 50, rowY - 12, 140, 32),
+            Qt::AlignLeft | Qt::AlignVCenter,
+            scoreText(topScores, i)
+        );
+    }
+}
+
+}
 
 void GameRenderer::draw(
     QPainter &painter,
@@ -21,7 +78,8 @@ void GameRenderer::draw(
     const Dino &dino,
     const Obstacle &obstacle,
     const Projectile &fireball,
-    const GameState &state
+    const GameState &state,
+    const QVector<int> &topScores
 ) const {   // 表示不会修改当前 GameRenderer 对象的成员变量。
     // 背景：
     painter.fillRect(screenRect,QColor(32,33,36));  // 填充整个矩形界面
@@ -106,10 +164,28 @@ void GameRenderer::draw(
 
     if(state.welcome_) {
         painter.setFont(QFont(assets.fontFamily_, 32));
-        painter.drawText(screenRect, Qt::AlignCenter, "Welcome to Run's Dino!\nPress Space to Start Running!");
+        // 欢迎界面标题位置：110 控制标题顶部 y 坐标，70 控制文字区域高度。
+        painter.drawText(QRect(0, 110, screenRect.width(), 70), Qt::AlignCenter, "Welcome to Run's Dino!");
+        drawLeaderboard(painter, screenRect, assets, topScores);
+        painter.setFont(QFont(assets.fontFamily_, 22));
+        // 欢迎界面开始提示位置：710 控制提示顶部 y 坐标，让文字完整显示在地面下方。
+        painter.drawText(QRect(0, 710, screenRect.width(), 44), Qt::AlignCenter, "Press Space to Start Running!");
     }else if(state.gameOver_) {
         painter.setFont(QFont(assets.fontFamily_, 32));
-        painter.drawText(screenRect, Qt::AlignCenter, "Game Over\nPress R to Restart");
+        // 结束界面标题位置：70 控制标题顶部 y 坐标，64 控制文字区域高度。
+        painter.drawText(QRect(0, 70, screenRect.width(), 64), Qt::AlignCenter, "Game Over");
+        painter.setFont(QFont(assets.fontFamily_, 22));
+        painter.drawText(
+            // 结束界面分数位置：140 控制分数行顶部 y 坐标，36 控制文字区域高度。
+            QRect(0, 140, screenRect.width(), 36),
+            Qt::AlignCenter,
+            QString("Score %1     HI %2")
+                .arg(state.score_ / 15, 5, 10, QLatin1Char('0'))
+                .arg(state.highScore_ / 15, 5, 10, QLatin1Char('0'))
+        );
+        drawLeaderboard(painter, screenRect, assets, topScores);
+        // 结束界面重开提示位置：710 控制提示顶部 y 坐标，让文字完整显示在地面下方。
+        painter.drawText(QRect(0, 710, screenRect.width(), 36), Qt::AlignCenter, "Press R to Restart");
     }else if(state.paused_) {
         painter.setFont(QFont(assets.fontFamily_, 32));
         painter.drawText(screenRect, Qt::AlignCenter, "Paused\nPress ESC to Continue");

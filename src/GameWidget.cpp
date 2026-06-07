@@ -24,6 +24,7 @@ GameWidget::GameWidget(QWidget *parent)
     assets_.load(QCoreApplication::applicationDirPath());  // 传入路径
     // 程序启动时先读取本地历史记录，让最高分可以跨运行保存。
     state_.highScore_ = SaveData::loadHighScore();
+    topScores_ = SaveData::loadTopScores(3);
 
     // 随机生成第一个障碍物：
     obstacle_.spawn(width());
@@ -119,7 +120,8 @@ void GameWidget::paintEvent(QPaintEvent *) {
         dino_,
         obstacle_,
         fireball_,
-        state_
+        state_,
+        topScores_
     );
 }
 
@@ -150,6 +152,7 @@ void GameWidget::saveScoreOnGameOver() {
     }
 
     SaveData::appendGameScore(state_.score_);
+    topScores_ = SaveData::loadTopScores(3);
     scoreSavedForCurrentGame_ = true;
 }
 

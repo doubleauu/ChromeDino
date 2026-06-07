@@ -49,6 +49,12 @@ bool Assets::load(const QString &appDir) {
     // 能量球图片：
     energyballPixmap_.load(imagePath + "Energyball.png");
 
+    // 排行榜图片：
+    leaderboardPanelPixmap_.load(imagePath + "LeaderboardPanel.png");
+    leaderboardMedal1Pixmap_.load(imagePath + "LeaderboardMedal1.png");
+    leaderboardMedal2Pixmap_.load(imagePath + "LeaderboardMedal2.png");
+    leaderboardMedal3Pixmap_.load(imagePath + "LeaderboardMedal3.png");
+
     // 加载字体：
     const QString resourcePath = appDir + "/Resources/";
     const int fontId  = QFontDatabase::addApplicationFont(resourcePath + "TEXTS.ttf");  // 把字体文件注册到当前 Qt 程序中

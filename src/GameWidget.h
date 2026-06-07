@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QTimer>
+#include <QVector>
 #include <QWidget>
 
 #include "core/GameState.h"
@@ -34,6 +35,7 @@ private:
     Obstacle obstacle_;
     Projectile fireball_;
     GameRenderer renderer_;
+    QVector<int> topScores_;
     bool scoreSavedForCurrentGame_ = false;  // 标记每一局游戏存档写入状态；
 
 };
